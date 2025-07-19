@@ -1,0 +1,58 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - feature
+  pull_request:
+
+jobs:
+  build:
+    name: Build and Deploy
+    runs-on: fuadzqnr
+
+    env:
+      IMAGE_NAME: fleurs-noir
+      REGISTRY: docker.io  # Atau docker.io jika pakai DockerHub
+      DEV_SERVER: root@103.178.153.102
+      PROD_SERVER: root@103.178.153.102
+      DOCKER_CONTEXT: .
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Node Install & Package
+        run: |
+            npm install
+            npm run build
+
+      - name: Log in to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build Image
+        run: |
+          docker build -t $REGISTRY/${{ github.repository }}:$GITHUB_SHA $DOCKER_CONTEXT
+          docker push $REGISTRY/${{ github.repository }}:$GITHUB_SHA
+
+      - name: Deploy to Development
+        if: github.ref == 'refs/heads/main'
+        run: |
+          ssh $DEV_SERVER "
+            docker pull $REGISTRY/${{ github.repository }}:$GITHUB_SHA &&
+            docker stop myapp-dev || true &&
+            docker rm myapp-dev || true &&
+            docker run -d --name test-app -p 3000:3000 $REGISTRY/${{ github.repository }}:$GITHUB_SHA
+          "
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY_DEV }}
