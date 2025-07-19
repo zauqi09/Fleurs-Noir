@@ -36,7 +36,7 @@ jobs:
 
       - name: Build Image
         run: |
-          docker login echo ${{ secrets.REGISTRY_PASSWORD }} | docker login -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin ${{ env.REGISTRY }}
+          echo ${{ secrets.REGISTRY_PASSWORD }} | docker login -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin ${{ env.REGISTRY }}
           docker build -t ${{ env.APP_NAME }}:$GITHUB_SHA $DOCKER_CONTEXT
           docker push ${{ env.APP_NAME }}:$GITHUB_SHA
 
