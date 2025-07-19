@@ -36,14 +36,13 @@ jobs:
       - name: Log in to container registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - name: Build Image
         run: |
-          docker build -t $REGISTRY/${{ github.repository }}:$GITHUB_SHA $DOCKER_CONTEXT
-          docker push $REGISTRY/${{ github.repository }}:$GITHUB_SHA
+          docker build -t ${{ github.repository }}:$GITHUB_SHA $DOCKER_CONTEXT
+          docker push ${{ github.repository }}:$GITHUB_SHA
 
       - name: Deploy to Development
         if: github.ref == 'refs/heads/main'
