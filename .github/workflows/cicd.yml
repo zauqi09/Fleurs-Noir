@@ -13,8 +13,9 @@ jobs:
     runs-on: fuadzqnr
 
     env:
+      APP_NAME: fleurs-noir
       IMAGE_NAME: fleurs-noir
-      REGISTRY: docker.io  # Atau docker.io jika pakai DockerHub
+      REGISTRY: docker.io
       DEV_SERVER: root@103.178.153.102
       PROD_SERVER: root@103.178.153.102
       DOCKER_CONTEXT: .
@@ -33,25 +34,20 @@ jobs:
             npm install
             npm run build
 
-      - name: Log in to container registry
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-
       - name: Build Image
         run: |
-          docker build -t ${{ github.repository }}:$GITHUB_SHA $DOCKER_CONTEXT
-          docker push ${{ github.repository }}:$GITHUB_SHA
+          docker login echo ${{ secrets.REGISTRY_PASSWORD }} | docker login -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin
+          docker build -t ${{ env.APP_NAME }}:$GITHUB_SHA $DOCKER_CONTEXT
+          docker push ${{ env.APP_NAME }}:$GITHUB_SHA
 
       - name: Deploy to Development
         if: github.ref == 'refs/heads/main'
         run: |
           ssh $DEV_SERVER "
-            docker pull $REGISTRY/${{ github.repository }}:$GITHUB_SHA &&
-            docker stop myapp-dev || true &&
-            docker rm myapp-dev || true &&
-            docker run -d --name test-app -p 3000:3000 $REGISTRY/${{ github.repository }}:$GITHUB_SHA
+            docker pull ${{ env.APP_NAME }}:$GITHUB_SHA &&
+            docker stop ${{ env.APP_NAME }} || true &&
+            docker rm ${{ env.APP_NAME }} || true &&
+            docker run -d --name ${{ env.APP_NAME }} -p 3000:3000 ${{ env.APP_NAME }}:$GITHUB_SHA
           "
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY_DEV }}

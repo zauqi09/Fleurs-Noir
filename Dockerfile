@@ -9,10 +9,8 @@ COPY . .
 
 RUN npm run build
 
-# Tahap 2: Serve aplikasi menggunakan nginx
 FROM nginx:alpine
 
-# Hapus konfigurasi default nginx dan ganti dengan milik kita
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
